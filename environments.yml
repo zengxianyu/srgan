@@ -1,0 +1,12 @@
+name: tf2
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - jinja2
+  - pip:
+    - tensorflow-estimator==2.0.1
+    - tensorflow-cpu==2.0.0
+    - tensorlayer==2.2.2
+    - tqdm
+prefix: /home/zeng/anaconda3/envs/tf2
