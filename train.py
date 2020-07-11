@@ -10,6 +10,7 @@ import tensorflow as tf
 import tensorlayer as tl
 from model import get_G, get_D
 from config import config
+import pdb
 
 ###====================== HYPER-PARAMETERS ===========================###
 ## Adam
@@ -27,7 +28,7 @@ shuffle_buffer_size = 128
 # ni = int(np.sqrt(batch_size))
 
 # create folders to save result images and trained models
-save_dir = "samples"
+save_dir = "DIV2K_obj_seq4x_SRGAN"
 tl.files.exists_or_mkdir(save_dir)
 checkpoint_dir = "models"
 tl.files.exists_or_mkdir(checkpoint_dir)
@@ -146,46 +147,42 @@ def evaluate():
     ###====================== PRE-LOAD DATA ===========================###
     # train_hr_img_list = sorted(tl.files.load_file_list(path=config.TRAIN.hr_img_path, regx='.*.png', printable=False))
     # train_lr_img_list = sorted(tl.files.load_file_list(path=config.TRAIN.lr_img_path, regx='.*.png', printable=False))
-    valid_hr_img_list = sorted(tl.files.load_file_list(path=config.VALID.hr_img_path, regx='.*.png', printable=False))
     valid_lr_img_list = sorted(tl.files.load_file_list(path=config.VALID.lr_img_path, regx='.*.png', printable=False))
 
     ## if your machine have enough memory, please pre-load the whole train set.
     # train_hr_imgs = tl.vis.read_images(train_hr_img_list, path=config.TRAIN.hr_img_path, n_threads=32)
     # for im in train_hr_imgs:
     #     print(im.shape)
-    valid_lr_imgs = tl.vis.read_images(valid_lr_img_list, path=config.VALID.lr_img_path, n_threads=32)
     # for im in valid_lr_imgs:
     #     print(im.shape)
-    valid_hr_imgs = tl.vis.read_images(valid_hr_img_list, path=config.VALID.hr_img_path, n_threads=32)
     # for im in valid_hr_imgs:
     #     print(im.shape)
 
     ###========================== DEFINE MODEL ============================###
-    imid = 64  # 0: 企鹅  81: 蝴蝶 53: 鸟  64: 古堡
-    valid_lr_img = valid_lr_imgs[imid]
-    valid_hr_img = valid_hr_imgs[imid]
-    # valid_lr_img = get_imgs_fn('test.png', 'data2017/')  # if you want to test your own image
-    valid_lr_img = (valid_lr_img / 127.5) - 1  # rescale to ［－1, 1]
-    # print(valid_lr_img.min(), valid_lr_img.max())
 
     G = get_G([1, None, None, 3])
-    G.load_weights(os.path.join(checkpoint_dir, 'g.h5'))
+    G.load_weights(os.path.join(checkpoint_dir, 'g.npz'))
     G.eval()
+    for i in range(len(valid_lr_img_list)):
+        _list = valid_lr_img_list[i:i+1]
+        _name = valid_lr_img_list[i]
+        valid_lr_imgs = tl.vis.read_images(_list, path=config.VALID.lr_img_path, n_threads=32)
+        imid = 64  # 0: 企鹅  81: 蝴蝶 53: 鸟  64: 古堡
+        valid_lr_img = valid_lr_imgs[0]
+        # valid_lr_img = get_imgs_fn('test.png', 'data2017/')  # if you want to test your own image
+        pdb.set_trace()
+        valid_lr_img = (valid_lr_img / 127.5) - 1  # rescale to ［－1, 1]
+        # print(valid_lr_img.min(), valid_lr_img.max())
 
-    valid_lr_img = np.asarray(valid_lr_img, dtype=np.float32)
-    valid_lr_img = valid_lr_img[np.newaxis,:,:,:]
-    size = [valid_lr_img.shape[1], valid_lr_img.shape[2]]
+        valid_lr_img = np.asarray(valid_lr_img, dtype=np.float32)
+        valid_lr_img = valid_lr_img[np.newaxis,:,:,:]
+        size = [valid_lr_img.shape[1], valid_lr_img.shape[2]]
 
-    out = G(valid_lr_img).numpy()
+        out = G(valid_lr_img).numpy()
 
-    print("LR size: %s /  generated HR size: %s" % (size, out.shape))  # LR size: (339, 510, 3) /  gen HR size: (1, 1356, 2040, 3)
-    print("[*] save images")
-    tl.vis.save_image(out[0], os.path.join(save_dir, 'valid_gen.png'))
-    tl.vis.save_image(valid_lr_img[0], os.path.join(save_dir, 'valid_lr.png'))
-    tl.vis.save_image(valid_hr_img, os.path.join(save_dir, 'valid_hr.png'))
-
-    out_bicu = scipy.misc.imresize(valid_lr_img[0], [size[0] * 4, size[1] * 4], interp='bicubic', mode=None)
-    tl.vis.save_image(out_bicu, os.path.join(save_dir, 'valid_bicubic.png'))
+        print("LR size: %s /  generated HR size: %s" % (size, out.shape))  # LR size: (339, 510, 3) /  gen HR size: (1, 1356, 2040, 3)
+        print("[*] save images")
+        tl.vis.save_image(out[0], os.path.join(save_dir, _name))
 
 
 if __name__ == '__main__':
